@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Real or Phish?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+:root{color-scheme:light;
+  --ground:#ECEEF4;--panel:#FFFFFF;--ink:#1B1F33;--muted:#555B75;--line:#D3D7E4;
+  --accent:#E4572E;--focus:#E4572E;--good:#12806F;--bad:#C2410C;
+  --soft-a:#FDE6DE;--soft-b:#D9F1EC;--soft-c:#F2F3F8;--radius:16px;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;--body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.55}
+.wrap{max-width:780px;margin:0 auto;padding-inline:16px;padding-block:18px 60px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:12px}
+.brand svg{flex:none}
+.brand h1{font-family:var(--display);font-weight:700;font-size:1.55rem;line-height:1.1;margin:0}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:.88rem}
+#restart{font:inherit;font-size:.82rem;font-weight:700;background:transparent;border:0;color:var(--muted);cursor:pointer;text-decoration:underline}
+#progress{display:flex;align-items:center;gap:12px;margin:16px 0 10px;font-weight:700;font-size:.85rem;color:var(--muted)}
+.pbar{flex:1;height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.pbar div{height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+#card{background:var(--panel);border-radius:var(--radius);padding:26px clamp(18px,4vw,34px)}
+.cardhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.eyebrow{display:block;font-weight:800;font-size:.78rem;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
+h2{font-family:var(--display);font-weight:700;font-size:clamp(1.6rem,4.5vw,2.2rem);line-height:1.12;margin:4px 0 14px;text-wrap:balance}
+h3{font-family:var(--display);font-weight:600;font-size:1.25rem;margin:18px 0 6px}
+p{margin:0 0 12px}
+.listen{font:inherit;font-size:.85rem;font-weight:700;border:2px solid var(--ink);background:var(--panel);color:var(--ink);border-radius:99px;padding:5px 14px;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.field{margin:16px 0}
+.field label{display:block;font-weight:800;margin-bottom:4px}
+.req{font-weight:600;color:var(--muted);font-size:.85rem}
+.hint{font-size:.9rem;color:var(--muted);margin:0 0 6px}
+input[type=text],textarea,select{font:inherit;width:100%;padding:10px 12px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
+select{width:auto}
+textarea{resize:vertical}
+.box{border-radius:16px;padding:16px 18px;margin:12px 0}
+.box.a{background:var(--soft-a)} .box.b{background:var(--soft-b)} .box.c{background:var(--soft-c)}
+.box h3{margin-top:0}
+.box ul,.fb ul{margin:4px 0 0;padding-left:1.2em}
+.box li{margin:3px 0}
+.items{display:grid;gap:14px;margin-top:12px}
+.item,.msg{border:2px solid var(--line);border-radius:16px;padding:14px 16px}
+.item.ok,.msg.ok{border-color:var(--good)} .item.no,.msg.no{border-color:var(--bad)}
+.itext{font-weight:700;font-size:1.08rem;margin:0 0 10px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts.col{flex-direction:column}
+.opt{font:inherit;font-weight:700;border:2px solid var(--ink);background:#fff;color:var(--ink);border-radius:12px;padding:8px 16px;cursor:pointer;text-align:left}
+.opt:hover:not(:disabled){background:var(--soft-a)}
+.opt:disabled{cursor:default;opacity:.55}
+.opt.picked{opacity:1}
+.opt.answer{background:var(--good);border-color:var(--good);color:#fff;opacity:1}
+.opt.picked:not(.answer){background:var(--bad);border-color:var(--bad);color:#fff}
+.fb{margin:10px 0 0;font-size:.98rem;background:var(--soft-c);border-radius:12px;padding:10px 12px}
+.fb p{margin:6px 0 0}
+.tally{margin:16px 0 0;font-weight:700;color:var(--muted)}
+.nav{display:flex;justify-content:space-between;gap:12px;margin-top:24px}
+.btn{font:inherit;font-weight:800;border:2px solid var(--ink);background:#fff;color:var(--ink);border-radius:12px;padding:10px 20px;cursor:pointer}
+.btn.primary{background:var(--ink);color:#fff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btnrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0}
+.copied{font-weight:700;color:var(--good)}
+#summary{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9rem;margin-top:6px}
+ol.steps{padding-left:1.3em} ol.steps li{margin:6px 0}
+.callout{border-left:5px solid var(--accent);background:var(--soft-c);border-radius:0 12px 12px 0;padding:10px 14px;margin:14px 0 0;font-weight:600}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.brand h1{font-weight:800;letter-spacing:-.01em}
+h2{font-weight:800;letter-spacing:-.015em}
+.eyebrow{font-family:var(--mono);font-weight:700}
+.msg{background:#FAFBFD;padding:0;overflow:hidden}
+.mhead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;padding:10px 14px;background:var(--soft-c);border-bottom:1px solid var(--line)}
+.mkind{font-family:var(--mono);font-size:.7rem;font-weight:700;text-transform:uppercase;background:var(--ink);color:#fff;border-radius:6px;padding:2px 7px}
+.mfrom{font-family:var(--mono);font-size:.85rem;word-break:break-all}
+.msub{font-weight:700;flex-basis:100%}
+.mbody{padding:12px 14px;font-size:1rem}
+.mbody p{margin:0 0 8px}
+.link{color:#2B55C9;text-decoration:underline;font-family:var(--mono);font-size:.9rem;word-break:break-all}
+.msg .opts,.msg .fb{margin:0 14px 14px}
+.opt.phish{border-color:var(--accent)}
+mark{background:transparent;color:inherit;border-radius:4px;padding:0 2px}
+.msg.revealed mark{background:#FFE45C;box-shadow:inset 0 -2px 0 var(--accent)}
+.flags{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:10px 0}
+.flag{background:var(--soft-a);border-radius:12px;padding:10px 12px;font-size:.95rem}
+.flag strong{display:block;font-family:var(--display);font-size:1.05rem}
+.stop{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:10px 0}
+.stop div{border:2px solid var(--ink);border-radius:12px;padding:10px 12px}
+.stop strong{font-family:var(--display);font-size:1.3rem;display:block;color:var(--accent)}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg width="46" height="40" viewBox="0 0 46 40" aria-hidden="true"><path d="M4 20 Q16 4 32 14 L42 6 L40 20 L42 34 L32 26 Q16 36 4 20Z" fill="#1B1F33"/><circle cx="14" cy="18" r="2.5" fill="#fff"/><path d="M22 6 v-4 M20 2 h4" stroke="#E4572E" stroke-width="3"/></svg>
+      <div><h1>Real or Phish?</h1><p>Grade 6 Library Media · Self-paced lesson · Week of Sept 30</p></div>
+    </div>
+    <button type="button" id="restart">Start over</button>
+  </header>
+  <div id="progress"></div>
+  <main id="card"></main>
+</div>
+
+<script>
+window.LESSON = {
+  id:"g6-phishing-sep30",
+  summaryTitle:"Library: Real or Phish? (Grade 6, Sept 30)",
+  turnIn:[
+    "Click <strong>Copy my answers</strong> above.",
+    "Open <strong>Google Classroom</strong> and find the assignment <strong>Library: Real or Phish?</strong>",
+    "Paste your answers into the <strong>private comment</strong> box (Ctrl+V or Cmd+V) and post it.",
+    "Click <strong>Turn in</strong>."
+  ],
+  steps:[
+    { type:"welcome", eyebrow:"Media Detectives", title:"Ms. Gobe is away this week",
+      html:`<p>This week's case is self-paced. It takes about <strong>30–35 minutes</strong>. Your answers save on this computer as you go, so you can take a break and come back.</p>
+      <div class="box c"><h3>Reading goal check</h3>Last week you set a goal for your Sora book. How did it go?</div>`,
+      fields:[
+        {id:"name", label:"First name", short:"First name", placeholder:"First name only", required:true},
+        {id:"book", label:"Your Sora book and where you are now (%)", short:"Sora book + progress", placeholder:"Example: The Wild Robot · 78%", required:true},
+        {id:"goal", label:"Did you meet last week's goal? What's your goal for next week?", short:"Reading goal", long:true, required:true}
+      ]},
+    { type:"read", eyebrow:"Case #6-02 · Background", title:"What is phishing?",
+      html:`<p><strong>Phishing</strong> (say it like \"fishing\") is when someone sends a fake message to trick you into giving away a password, personal information, or money, or into clicking a harmful link. The message is the bait. They're hoping you bite.</p>
+      <div class="box a"><h3>Remember Jordan?</h3>Last week we found Jordan's school, pet's name, schedule, and even security-question answers just by scrolling a public feed. Scammers use clues like those to make fake messages look <em>personal</em> and believable.</div>
+      <h3>6 red flags to look for</h3>
+      <div class="flags">
+        <div class="flag"><strong>Hurry!</strong>“Act now,” “within 24 hours,” or “your account will be deleted.”</div>
+        <div class="flag"><strong>Too good to be true</strong>Prizes, free money, or gift cards you never entered to win.</div>
+        <div class="flag"><strong>Asks for secrets</strong>Passwords, addresses, birthdays, or phone numbers.</div>
+        <div class="flag"><strong>Weird sender</strong>Addresses with odd spellings, like <span class="link">pixe1quest</span> with a number 1 instead of an L.</div>
+        <div class="flag"><strong>Sketchy link</strong>Shortened links or web addresses that don't match the real company.</div>
+        <div class="flag"><strong>Generic or sloppy</strong>“Dear User,” spelling mistakes, or strange grammar.</div>
+      </div>`},
+    { type:"inbox", eyebrow:"Case #6-02 · Evidence", title:"Investigate Jordan's inbox", short:"Real or Phish inbox",
+      html:`<p>These 6 messages arrived in Jordan's inbox (Jordan is made up, and so are these companies). Decide if each one is <strong>real</strong> or a <strong>phish</strong>. After you pick, the red flags light up.</p>`,
+      items:[
+        {kind:"Email", from:"Pixel Quest Support &lt;support@<mark>pixe1quest</mark>-rewards.co&gt;", subject:"<mark>URGENT!!! Account DELETED in 24 hours</mark>",
+          body:`<p>Your Pixel Quest account has suspicious activity. <mark>Verify your username and password</mark> right away or lose all your coins forever.</p><p><span class="link"><mark>bit.ly/pq-verify-now</mark></span></p>`,
+          a:"Phish", flags:["Hurry! (24 hours, all caps)","Weird sender: pixe1quest uses a number 1","Asks for your password","Shortened, hidden link"],
+          why:"Real companies never ask for your password in an email. If you're worried, open the game yourself, not the link."},
+        {kind:"Email", from:"Mr. Alvarez &lt;m.alvarez@mapleridge.school&gt;", subject:"Reminder: book talks on Friday",
+          body:`<p>Hi class, a reminder that book talks are Friday. Bring the book you are reading and be ready to share your favorite part. See you in class!</p>`,
+          a:"Real", flags:[], why:"This one is real. It's from a teacher Jordan knows, has no links, and doesn't ask for anything private."},
+        {kind:"Text", from:"+1 (555) 013-2291", subject:"",
+          body:`<p><mark>CONGRATS!! You WON a $500 gift card</mark> 🎉 <mark>Reply with your full name, address and birthday</mark> to claim!!</p>`,
+          a:"Phish", flags:["Too good to be true: a prize you never entered for","Asks for personal info","A number you don't know"],
+          why:"If you didn't enter a contest, you didn't win one. Delete it and don't reply, not even \"STOP.\""},
+        {kind:"Email", from:"BookBurst &lt;no-reply@bookburst.com&gt;", subject:"Your hold is ready: The Wild Robot",
+          body:`<p>Good news! The book you placed on hold, <em>The Wild Robot</em>, is ready. Open the BookBurst app to start reading. Happy reading!</p>`,
+          a:"Real", flags:[], why:"This is real. Jordan placed the hold, the sender matches the app, and it tells you to open the app yourself. No link, no password request."},
+        {kind:"Direct message", from:"@<mark>maple_ridge_bball</mark> (new account, 0 posts)", subject:"",
+          body:`<p>hey <mark>Jordan</mark>!! <mark>coach</mark> needs <mark>everyone's home address + a parent phone number</mark> for the team list. <mark>send asap</mark> 🏀</p>`,
+          a:"Phish", flags:["Uses clues from Jordan's public posts (name, basketball, school)","Brand-new account with no posts","Asks for an address and phone number","Hurry! (asap)"],
+          why:"This is the sneakiest kind: it's personalized using Jordan's digital footprint. A real coach would ask a parent directly, not a student in a DM."},
+        {kind:"Email", from:"Library Help Desk &lt;help@<mark>mapleridge-library-login.net</mark>&gt;", subject:"Problem with you're acount",
+          body:`<p><mark>Dear User,</mark></p><p>Your school library <mark>acount</mark> has a problem. <mark>Click here to log in</mark> and fix it:</p><p><span class="link"><mark>mapleridge-library-login.net/fix</mark></span></p>`,
+          a:"Phish", flags:["Generic greeting: \"Dear User\"","Spelling mistakes (you're, acount)","Web address doesn't match the real school","Asks you to log in through a link"],
+          why:"The school's real address is mapleridge.school. Anything else pretending to be the school is a red flag."}
+      ]},
+    { type:"read", eyebrow:"What to do", title:"If you think it's a phish…",
+      html:`<div class="stop">
+        <div><strong>Stop</strong>Don't click, reply, or download anything.</div>
+        <div><strong>Check</strong>Go to the app or website yourself, not through the link.</div>
+        <div><strong>Tell</strong>Show a trusted adult: a parent, guardian, or teacher.</div>
+        <div><strong>Report</strong>Use the “report” or “block” button, then delete it.</div>
+      </div>
+      <div class="callout">Clicked something by mistake? That happens to adults too. Tell an adult right away and change your password. Getting help fast is the smart move.</div>`},
+    { type:"choice", eyebrow:"Apply it", title:"What's your move?", short:"What's your move",
+      items:[
+        {q:"You get an email that looks like it's from your game. It says you must log in through a link or lose your account.",
+          opts:[{t:"Click the link fast so you don't lose anything.",ok:false,why:"Urgency is exactly what scammers want."},
+                {t:"Close the email and open the game app yourself to check.",ok:true,why:"Checking on your own, not through their link, is the safest way."},
+                {t:"Forward it to friends to ask if it's real.",ok:false,why:"That could spread the phish to them too."}]},
+        {q:"A friend's account sends you: \"lol is this you in this video?? [link]\"",
+          opts:[{t:"Click it. It's from a friend.",ok:false,why:"Hacked accounts are often used to send phishing links to friends."},
+                {t:"Ask your friend in person, or another way, if they really sent it.",ok:true,why:"Checking through a different channel catches hacked accounts."},
+                {t:"Reply with your password so they can fix it.",ok:false,why:"Never share passwords, even with friends."}]},
+        {q:"You clicked a weird link and typed your password before realizing it was fake.",
+          opts:[{t:"Hide it and hope nothing happens.",ok:false,why:"Waiting gives a scammer more time."},
+                {t:"Tell a trusted adult and change your password right away.",ok:true,why:"Acting fast protects your account. Mistakes happen, and fixing them is what counts."},
+                {t:"Delete the account forever.",ok:false,why:"You usually don't need to. Change the password and get help."}]}
+      ]},
+    { type:"reflect", eyebrow:"Exit ticket", title:"Close the case",
+      fields:[
+        {id:"r1", label:"Which red flag do you think is hardest to spot? Why?", short:"Hardest red flag to spot", long:true, required:true},
+        {id:"r2", label:"How did Jordan's public posts make the basketball DM more believable?", short:"How Jordan's footprint helped the scammer", long:true, required:true},
+        {id:"r3", label:"Challenge: Write a one-sentence tip to help a 4th grader spot a phish.", short:"Tip for a 4th grader", long:true}
+      ]},
+    { type:"finish", eyebrow:"Case closed", title:"Turn in your work",
+      html:`<p>Nice detective work. Copy your answers and turn them in to Ms. Gobe on Google Classroom.</p>`}
+  ]
+};
+</script>
+<script>/* Self-paced lesson engine. Expects a global LESSON object. */
+(function(){
+const L = window.LESSON;
+const KEY = "async-" + L.id;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let S = { step:0, inputs:{}, picks:{}, words:[], num:"", sym:"" };
+try { const saved = JSON.parse(localStorage.getItem(KEY) || "null"); if (saved && typeof saved === "object") S = Object.assign(S, saved); } catch(e){}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+
+function score(step, si){
+  if (!step.items) return null;
+  let right = 0, done = 0;
+  step.items.forEach((it, i) => {
+    const p = S.picks[si + ":" + i];
+    if (p == null) return;
+    done++;
+    if (step.type === "choice") { if (it.opts[p] && it.opts[p].ok) right++; }
+    else if (p === it.a) right++;
+  });
+  return { right, done, total: step.items.length };
+}
+
+function complete(step, si){
+  if (step.type === "welcome" || step.type === "reflect") return (step.fields || []).every(f => !f.required || (S.inputs[f.id] || "").trim());
+  if (step.items) { const sc = score(step, si); return sc.done === sc.total; }
+  if (step.type === "builder") return S.words.length >= 3;
+  return true;
+}
+
+function field(f){
+  const v = esc(S.inputs[f.id] || "");
+  const tag = f.long
+    ? `<textarea id="f-${f.id}" data-f="${f.id}" rows="3" placeholder="${esc(f.placeholder||"")}">${v}</textarea>`
+    : `<input id="f-${f.id}" data-f="${f.id}" type="text" autocomplete="off" placeholder="${esc(f.placeholder||"")}" value="${v}">`;
+  return `<div class="field"><label for="f-${f.id}">${f.label}${f.required?' <span class="req">(required)</span>':''}</label>${f.hint?`<p class="hint">${f.hint}</p>`:''}${tag}</div>`;
+}
+
+function itemsHTML(step, si){
+  if (step.type === "sort") return `<div class="items">${step.items.map((it,i)=>{
+    const p = S.picks[si+":"+i];
+    return `<div class="item ${p!=null?(p===it.a?'ok':'no'):''}"><p class="itext">${it.t}</p>
+      <div class="opts">${step.options.map(o=>`<button type="button" class="opt ${p===o?'picked':''} ${p!=null&&o===it.a?'answer':''}" data-pick="${si}:${i}" data-v="${esc(o)}" ${p!=null?'disabled':''}>${o}</button>`).join("")}</div>
+      ${p!=null?`<p class="fb"><strong>${p===it.a?step.yes||'Correct!':'Not quite. It\'s '+it.a+'.'}</strong> ${it.why}</p>`:''}</div>`;}).join("")}</div>`;
+  if (step.type === "choice") return `<div class="items">${step.items.map((it,i)=>{
+    const p = S.picks[si+":"+i];
+    return `<div class="item ${p!=null?(it.opts[p].ok?'ok':'no'):''}"><p class="itext">${it.q}</p>
+      <div class="opts col">${it.opts.map((o,k)=>`<button type="button" class="opt wide ${p===k?'picked':''} ${p!=null&&o.ok?'answer':''}" data-pick="${si}:${i}" data-v="${k}" ${p!=null?'disabled':''}>${o.t}</button>`).join("")}</div>
+      ${p!=null?`<p class="fb"><strong>${it.opts[p].ok?'Great choice!':'Think again.'}</strong> ${it.opts[p].why}${it.opts[p].ok?'':' '+it.opts.find(o=>o.ok).why}</p>`:''}</div>`;}).join("")}</div>`;
+  if (step.type === "inbox") return `<div class="items">${step.items.map((m,i)=>{
+    const p = S.picks[si+":"+i];
+    return `<div class="msg ${p!=null?'revealed '+(p===m.a?'ok':'no'):''}">
+      <div class="mhead"><span class="mkind">${m.kind}</span><span class="mfrom">${m.from}</span>${m.subject?`<span class="msub">${m.subject}</span>`:''}</div>
+      <div class="mbody">${m.body}</div>
+      <div class="opts">${["Real","Phish"].map(o=>`<button type="button" class="opt ${o==='Phish'?'phish':'real'} ${p===o?'picked':''} ${p!=null&&o===m.a?'answer':''}" data-pick="${si}:${i}" data-v="${o}" ${p!=null?'disabled':''}>${o==='Real'?'Looks real':'Phish!'}</button>`).join("")}</div>
+      ${p!=null?`<div class="fb"><strong>${p===m.a?'You got it!':'Look again.'} This one is ${m.a==='Real'?'REAL':'a PHISH'}.</strong>${m.flags&&m.flags.length?`<ul>${m.flags.map(f=>`<li>${f}</li>`).join("")}</ul>`:''}<p>${m.why}</p></div>`:''}
+    </div>`;}).join("")}</div>`;
+  return "";
+}
+
+function builderHTML(step){
+  const words = S.words;
+  const phrase = words.map(w=>w[0].toUpperCase()+w.slice(1)).join("-") + (S.num||"") + (S.sym||"");
+  const len = words.length ? phrase.length : 0;
+  const lvl = len >= 20 ? "strong" : len >= 12 ? "okay" : "weak";
+  const pct = Math.min(100, Math.round(len / 24 * 100));
+  return `<div class="builder">
+    <p class="hint">Tap 3 or 4 words, in any order. Tap a word again to remove it.</p>
+    <div class="chips">${step.bank.map(w=>`<button type="button" class="chip ${words.includes(w)?'on':''}" data-w="${w}" aria-pressed="${words.includes(w)}">${w}</button>`).join("")}</div>
+    <div class="extras">
+      <label for="bnum">Add a number</label><select id="bnum"><option value="">none</option>${["7","42","88","315"].map(n=>`<option ${S.num===n?'selected':''}>${n}</option>`).join("")}</select>
+      <label for="bsym">Add a symbol</label><select id="bsym"><option value="">none</option>${["!","?","*","#"].map(n=>`<option ${S.sym===n?'selected':''}>${n}</option>`).join("")}</select>
+    </div>
+    <div class="phrase" aria-live="polite">${words.length?esc(phrase):'<span class="ph">Your practice passphrase shows up here</span>'}</div>
+    <div class="meter"><div class="bar ${lvl}" style="width:${pct}%"></div></div>
+    <p class="meterlabel">${len} characters · <strong class="${lvl}">${lvl==='strong'?'Strong!':lvl==='okay'?'Getting there':'Too short'}</strong></p>
+    <ul class="checks">
+      <li class="${words.length>=3?'yes':''}">3 or more words</li>
+      <li class="${len>=12?'yes':''}">12 or more characters</li>
+      <li class="yes">Nothing about you (no name, birthday, or pet)</li>
+    </ul>
+    <div class="callout">${step.warning}</div>
+  </div>`;
+}
+
+function summaryText(){
+  const lines = [L.summaryTitle];
+  L.steps.forEach((st, si) => {
+    (st.fields||[]).forEach(f => { if (S.inputs[f.id]) lines.push(`${f.short||f.label}: ${S.inputs[f.id].trim()}`); });
+    if (st.items) { const sc = score(st, si); lines.push(`${st.short}: ${sc.right} out of ${sc.total}`); }
+    if (st.type === "builder" && S.words.length) {
+      const len = (S.words.join("-") + (S.num||"") + (S.sym||"")).length;
+      lines.push(`Practice passphrase: I built one with ${len} characters. (I kept it secret. Passwords never go in homework!)`);
+    }
+  });
+  return lines.join("\n");
+}
+
+function render(){
+  const si = S.step, st = L.steps[si], n = L.steps.length;
+  $("#progress").innerHTML = `<div class="pbar"><div style="width:${Math.round((si)/(n-1)*100)}%"></div></div><span>Step ${si+1} of ${n}</span>`;
+  let body = "";
+  if (st.type === "finish") {
+    body = `${st.html||""}
+      <label for="summary" class="eyebrow">My answers</label>
+      <textarea id="summary" readonly rows="10">${esc(summaryText())}</textarea>
+      <div class="btnrow"><button type="button" class="btn primary" id="copy">Copy my answers</button><span id="copied" class="copied" role="status"></span></div>
+      <ol class="steps">${L.turnIn.map(t=>`<li>${t}</li>`).join("")}</ol>`;
+  } else {
+    body = (st.html||"") + (st.fields?st.fields.map(field).join(""):"") + itemsHTML(st, si) + (st.type==="builder"?builderHTML(st):"");
+  }
+  const sc = st.items ? score(st, si) : null;
+  $("#card").innerHTML = `<div class="cardhead"><div><div class="eyebrow">${st.eyebrow||""}</div><h2>${st.title}</h2></div>
+      ${"speechSynthesis" in window?`<button type="button" class="listen" id="listen">Read to me</button>`:''}</div>
+    <div id="content">${body}</div>
+    ${sc?`<p class="tally">Score: <strong>${sc.right}</strong> of ${sc.total}</p>`:''}
+    <div class="nav">
+      ${si>0?`<button type="button" class="btn" id="back">Back</button>`:'<span></span>'}
+      ${si<n-1?`<button type="button" class="btn primary" id="next" ${complete(st,si)?'':'disabled'}>${complete(st,si)?'Next':st.items?'Answer all to continue':st.type==='builder'?'Pick 3 words to continue':'Fill in the required boxes'}</button>`:''}
+    </div>`;
+  bind();
+}
+
+function bind(){
+  document.querySelectorAll("[data-f]").forEach(el => el.addEventListener("input", () => {
+    S.inputs[el.dataset.f] = el.value; save();
+    const st = L.steps[S.step], nx = $("#next");
+    if (nx) { const ok = complete(st, S.step); nx.disabled = !ok; nx.textContent = ok ? "Next" : "Fill in the required boxes"; }
+  }));
+  document.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => {
+    const st = L.steps[S.step]; const v = st.type === "choice" ? +b.dataset.v : b.dataset.v;
+    S.picks[b.dataset.pick] = v; save(); const y = window.scrollY; render(); window.scrollTo(0, y);
+  });
+  document.querySelectorAll("[data-w]").forEach(b => b.onclick = () => {
+    const w = b.dataset.w; const i = S.words.indexOf(w);
+    if (i >= 0) S.words.splice(i,1); else if (S.words.length < 4) S.words.push(w);
+    save(); const y = window.scrollY; render(); window.scrollTo(0, y);
+  });
+  const bn = $("#bnum"), bs = $("#bsym");
+  if (bn) bn.onchange = () => { S.num = bn.value; save(); render(); };
+  if (bs) bs.onchange = () => { S.sym = bs.value; save(); render(); };
+  const nx = $("#next"), bk = $("#back");
+  if (nx) nx.onclick = () => { stopTalk(); S.step++; save(); render(); window.scrollTo(0,0); };
+  if (bk) bk.onclick = () => { stopTalk(); S.step--; save(); render(); window.scrollTo(0,0); };
+  const cp = $("#copy");
+  if (cp) cp.onclick = () => {
+    const ta = $("#summary"), msg = $("#copied");
+    const fallback = () => { ta.focus(); ta.select(); msg.textContent = "Selected. Now press Ctrl+C (or Cmd+C) to copy."; };
+    try { navigator.clipboard.writeText(ta.value).then(() => { msg.textContent = "Copied! Now paste it into Google Classroom."; }, fallback); } catch(e) { fallback(); }
+  };
+  const ls = $("#listen");
+  if (ls) ls.onclick = () => {
+    if (speechSynthesis.speaking) { stopTalk(); return; }
+    const c = $("#card").cloneNode(true);
+    c.querySelectorAll("button,input,textarea,select,.nav,.listen,.tally").forEach(e => e.remove());
+    try { const u = new SpeechSynthesisUtterance(c.innerText.replace(/\s+/g," ")); u.rate = .95; u.onend = () => { ls.textContent = "Read to me"; }; speechSynthesis.speak(u); ls.textContent = "Stop reading"; } catch(e){}
+  };
+}
+function stopTalk(){ try { speechSynthesis.cancel(); } catch(e){} }
+
+const r = $("#restart");
+if (r) r.onclick = () => {
+  if (r.dataset.confirm) { S = { step:0, inputs:{}, picks:{}, words:[], num:"", sym:"" }; save(); delete r.dataset.confirm; r.textContent = "Start over"; render(); }
+  else { r.dataset.confirm = "1"; r.textContent = "Tap again to erase my answers"; setTimeout(()=>{ delete r.dataset.confirm; r.textContent = "Start over"; }, 4000); }
+};
+render();
+})();
+</script>
+</body>
+</html>
